@@ -3,6 +3,7 @@
 export interface Activity {
   id: number;
   name: string;
+  embedding?: number[]; // 384-dim vector from embeddings endpoint
 }
 
 export interface GameStartResponse {
@@ -12,10 +13,16 @@ export interface GameStartResponse {
 }
 
 export interface BaseAIWeights {
-  coefficients: number[][] | null;
-  intercept: number[] | null;
-  classes: number[] | null;
+  coef: number[][];  // Match backend format
+  intercept: number[];
+  classes: number[];
   is_fitted: boolean;
+}
+
+export interface EmbeddingsResponse {
+  activities: Activity[];
+  total: number;
+  embedding_dimension: number;
 }
 
 export interface TrainRequest {

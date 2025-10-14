@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { GameStartResponse } from '../types';
 import { API_ENDPOINTS, GAME_CONFIG } from '../config';
 import { useGameState } from '../hooks/useGameState';
+import { useEmbeddingsCache } from '../hooks/useEmbeddingsCache';
 import ActivityCard from '../components/ActivityCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -19,6 +20,7 @@ export default function GamePage() {
   }, [searchParams]);
 
   const { currentLeft, currentRight, handleChoice, isLoadingMore, initializeGame } = useGameState();
+  const { isLoading: embeddingsLoading, error: embeddingsError } = useEmbeddingsCache();
 
   useEffect(() => {
     // Validate tags
@@ -27,8 +29,18 @@ export default function GamePage() {
       return;
     }
 
+    // Wait for embeddings to load before initializing game
+    if (embeddingsLoading) {
+      return;
+    }
+
+    if (embeddingsError) {
+      setError(`Failed to load embeddings: ${embeddingsError}`);
+      return;
+    }
+
     initializeGameWithAPI();
-  }, [contextTags, navigate]);
+  }, [contextTags, navigate, embeddingsLoading, embeddingsError]);
 
   const initializeGameWithAPI = async () => {
     try {

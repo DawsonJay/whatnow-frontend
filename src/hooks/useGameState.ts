@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { Activity, GameStartResponse } from '../types';
 import { API_ENDPOINTS } from '../config';
 import { useSessionAI } from './useSessionAI';
+import { useEmbeddingsCache } from './useEmbeddingsCache';
 
 interface GameState {
   pool: Activity[];
@@ -21,34 +22,30 @@ export function useGameState() {
   });
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const { initializeSessionAI, trainSessionAI } = useSessionAI();
+  const { initializeSessionAI, trainSessionAI, rankActivities } = useSessionAI();
+  const { activities: embeddingsCache, getActivityEmbedding } = useEmbeddingsCache();
 
   const initializeGame = useCallback(
     (data: GameStartResponse, contextTags: string[]) => {
-      const pool = [...data.recommendations];
+      // Initialize Session AI with Base AI weights first
+      initializeSessionAI(data.base_ai_weights);
       
-      // Pick first two random activities
-      const leftIndex = Math.floor(Math.random() * pool.length);
-      const leftActivity = pool[leftIndex];
+      // Rank activities using Session AI
+      const rankedPool = rankActivities(data.recommendations, contextTags, embeddingsCache);
       
-      let rightIndex;
-      do {
-        rightIndex = Math.floor(Math.random() * pool.length);
-      } while (rightIndex === leftIndex && pool.length > 1);
-      const rightActivity = pool[rightIndex];
+      // Pick first two activities from top of ranked list
+      const leftActivity = rankedPool[0];
+      const rightActivity = rankedPool[1] || rankedPool[0];
 
       setGameState({
-        pool,
+        pool: rankedPool,
         currentLeft: leftActivity,
         currentRight: rightActivity,
         sessionId: data.session_id,
         contextTags,
       });
-
-      // Initialize Session AI with Base AI weights
-      initializeSessionAI(data.base_ai_weights);
     },
-    [initializeSessionAI]
+    [initializeSessionAI, rankActivities, embeddingsCache]
   );
 
   const displayNextPair = useCallback((updatedPool: Activity[]) => {
@@ -57,14 +54,18 @@ export function useGameState() {
       return { left: null, right: null };
     }
 
-    const leftIndex = Math.floor(Math.random() * updatedPool.length);
-    const leftActivity = updatedPool[leftIndex];
+    // Select from top-ranked activities (top 20% or at least 2)
+    const topCount = Math.max(2, Math.floor(updatedPool.length * 0.2));
+    const topActivities = updatedPool.slice(0, topCount);
+    
+    const leftIndex = Math.floor(Math.random() * topActivities.length);
+    const leftActivity = topActivities[leftIndex];
 
     let rightIndex;
     do {
-      rightIndex = Math.floor(Math.random() * updatedPool.length);
-    } while (rightIndex === leftIndex);
-    const rightActivity = updatedPool[rightIndex];
+      rightIndex = Math.floor(Math.random() * topActivities.length);
+    } while (rightIndex === leftIndex && topActivities.length > 1);
+    const rightActivity = topActivities[rightIndex];
 
     return { left: leftActivity, right: rightActivity };
   }, []);
@@ -89,14 +90,15 @@ export function useGameState() {
 
       const data: GameStartResponse = await response.json();
 
-      // Add new recommendations to pool
+      // Add new recommendations to pool and re-rank
       setGameState((prev) => {
-        const newPool = [...prev.pool, ...data.recommendations];
-        const nextPair = displayNextPair(newPool);
+        const combinedPool = [...prev.pool, ...data.recommendations];
+        const rankedPool = rankActivities(combinedPool, prev.contextTags, embeddingsCache);
+        const nextPair = displayNextPair(rankedPool);
         
         return {
           ...prev,
-          pool: newPool,
+          pool: rankedPool,
           currentLeft: nextPair.left,
           currentRight: nextPair.right,
         };
@@ -141,29 +143,36 @@ export function useGameState() {
       // Remove loser from pool
       const updatedPool = gameState.pool.filter((activity) => activity.id !== loser.id);
 
-      // Train Session AI
-      trainSessionAI(gameState.contextTags, winner.id, 1.0);
+      // Train Session AI with embedding
+      const winnerEmbedding = getActivityEmbedding(winner.id);
+      if (winnerEmbedding) {
+        // TODO: Implement actual weight update with embedding
+        trainSessionAI(gameState.contextTags, winner.id, 1.0);
+      }
 
       // Train Base AI via API
       await trainBaseAI(winner.id);
 
+      // Re-rank remaining activities after training
+      const rerankedPool = rankActivities(updatedPool, gameState.contextTags, embeddingsCache);
+
       // Check if we need more recommendations
-      if (updatedPool.length <= 1) {
+      if (rerankedPool.length <= 1) {
         await fetchMoreRecommendations();
       } else {
-        // Keep the winner in place, replace only the loser
-        const remainingPool = updatedPool.filter((activity) => activity.id !== winner.id);
-        const newActivity = remainingPool[Math.floor(Math.random() * remainingPool.length)];
+        // Keep the winner in place, replace only the loser with next best-ranked
+        const remainingPool = rerankedPool.filter((activity) => activity.id !== winner.id);
+        const nextPair = displayNextPair(remainingPool);
         
         setGameState((prev) => ({
           ...prev,
-          pool: updatedPool,
-          currentLeft: winnerPosition === 'left' ? winner : newActivity,
-          currentRight: winnerPosition === 'right' ? winner : newActivity,
+          pool: rerankedPool,
+          currentLeft: winnerPosition === 'left' ? winner : nextPair.left,
+          currentRight: winnerPosition === 'right' ? winner : nextPair.right,
         }));
       }
     },
-    [gameState, trainSessionAI, trainBaseAI, fetchMoreRecommendations]
+    [gameState, trainSessionAI, trainBaseAI, fetchMoreRecommendations, getActivityEmbedding, rankActivities, embeddingsCache, displayNextPair]
   );
 
   return {
