@@ -1,6 +1,6 @@
 // Application configuration
 
-export const API_BASE_URL = 'https://whatnow-production.up.railway.app';
+export const API_BASE_URL = 'https://whatnow-backend-71bz.onrender.com';
 
 export const API_ENDPOINTS = {
   gameStart: `${API_BASE_URL}/activities/game/start`,
