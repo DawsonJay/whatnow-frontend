@@ -3,10 +3,9 @@ interface TagGroupProps {
   tags: string[];
   selected: string | string[] | null;
   onTagSelect: (tag: string) => void;
-  exclusive: boolean;
 }
 
-export default function TagGroup({ title, tags, selected, onTagSelect, exclusive }: TagGroupProps) {
+export default function TagGroup({ title, tags, selected, onTagSelect }: TagGroupProps) {
   const isSelected = (tag: string): boolean => {
     if (Array.isArray(selected)) {
       return selected.includes(tag);

@@ -121,7 +121,6 @@ export default function TagSelector() {
               tags={TAG_GROUPS[groupKey].tags}
               selected={selectedTags[groupKey]}
               onTagSelect={(tag) => handleTagSelect(groupKey, tag)}
-              exclusive={TAG_GROUPS[groupKey].exclusive}
             />
           ))}
 
