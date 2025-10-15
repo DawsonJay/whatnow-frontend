@@ -101,13 +101,18 @@ export function useSessionAI() {
   const rankActivities = useCallback((
     activities: Activity[],
     contextTags: string[],
-    embeddingsCache: Map<number, Activity>
+    embeddingsCache: Map<number, Activity>,
+    weights?: BaseAIWeights | null
   ): Activity[] => {
-    if (!sessionAI.weights) {
+    // Use provided weights or fall back to sessionAI.weights
+    const activeWeights = weights || sessionAI.weights;
+    
+    if (!activeWeights) {
       console.warn('Session AI weights not initialized, returning original order');
       return activities;
     }
 
+    console.log('🎯 Ranking activities with Session AI weights');
     const contextVector = buildContextVector(contextTags);
     
     // Score and sort activities
@@ -121,12 +126,13 @@ export function useSessionAI() {
           return { activity, score: 0 };
         }
         
-        const score = predictScore(contextVector, embedding, sessionAI.weights!);
+        const score = predictScore(contextVector, embedding, activeWeights);
         return { activity, score };
       })
       .sort((a, b) => b.score - a.score) // Sort by score descending
       .map(item => item.activity);
     
+    console.log('✅ Activities ranked successfully');
     return scoredActivities;
   }, [sessionAI.weights, predictScore]);
 

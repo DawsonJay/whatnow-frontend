@@ -37,8 +37,8 @@ export function useGameState() {
       // Initialize Session AI with Base AI weights first
       initializeSessionAI(data.base_ai_weights);
       
-      // Rank activities using Session AI
-      const rankedPool = rankActivities(data.recommendations, contextTags, embeddingsCache);
+      // Rank activities using Session AI with the weights directly
+      const rankedPool = rankActivities(data.recommendations, contextTags, embeddingsCache, data.base_ai_weights);
       console.log('📊 Ranked pool size:', rankedPool.length);
       
       // Pick first two activities from top of ranked list
