@@ -71,8 +71,14 @@ export function useGameState() {
   }, []);
 
   const fetchMoreRecommendations = useCallback(async () => {
+    console.log('🚀 fetchMoreRecommendations called!', {
+      contextTagsLength: gameState.contextTags.length,
+      contextTags: gameState.contextTags.slice(0, 3),
+      currentPoolSize: gameState.pool.length
+    });
+
     if (!gameState.contextTags.length) {
-      console.warn('No context tags available for fetching more recommendations');
+      console.warn('❌ No context tags available for fetching more recommendations');
       return;
     }
 
@@ -188,6 +194,12 @@ export function useGameState() {
       const rerankedPool = rankActivities(updatedPool, gameState.contextTags, embeddingsCache);
 
       // Check if we need more recommendations
+      console.log('🔍 Checking pool size:', {
+        rerankedPoolLength: rerankedPool.length,
+        threshold: 10,
+        shouldFetch: rerankedPool.length <= 10
+      });
+      
       if (rerankedPool.length <= 10) {
         console.log('🔄 Pool running low, fetching more recommendations...', {
           currentPoolSize: rerankedPool.length,
