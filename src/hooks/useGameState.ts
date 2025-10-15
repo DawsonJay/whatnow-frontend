@@ -172,6 +172,12 @@ export function useGameState() {
       // Check if we need more recommendations
       if (rerankedPool.length <= 10) {
         await fetchMoreRecommendations();
+        // After fetching more recommendations, just update the pool and keep current cards
+        setGameState((prev) => ({
+          ...prev,
+          pool: rerankedPool,
+          // Keep currentLeft and currentRight unchanged
+        }));
       } else {
         // Keep the winner in place, replace only the loser with next best-ranked
         const remainingPool = rerankedPool.filter((activity) => activity.id !== winner.id);
