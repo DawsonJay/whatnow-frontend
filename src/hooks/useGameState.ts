@@ -27,11 +27,19 @@ export function useGameState() {
 
   const initializeGame = useCallback(
     (data: GameStartResponse, contextTags: string[]) => {
+      console.log('🎯 initializeGame called with:', { 
+        sessionId: data.session_id, 
+        recommendationsCount: data.recommendations?.length,
+        hasBaseAIWeights: !!data.base_ai_weights,
+        embeddingsCacheSize: embeddingsCache.size
+      });
+      
       // Initialize Session AI with Base AI weights first
       initializeSessionAI(data.base_ai_weights);
       
       // Rank activities using Session AI
       const rankedPool = rankActivities(data.recommendations, contextTags, embeddingsCache);
+      console.log('📊 Ranked pool size:', rankedPool.length);
       
       // Pick first two activities from top of ranked list
       const leftActivity = rankedPool[0];

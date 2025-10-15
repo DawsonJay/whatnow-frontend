@@ -15,6 +15,7 @@ export function useSessionAI() {
   });
 
   const initializeSessionAI = useCallback((baseAIWeights: BaseAIWeights | null) => {
+    console.log('🔄 Initializing Session AI with weights:', baseAIWeights);
     if (baseAIWeights) {
       // Deep copy the weights to avoid mutating the original
       const copiedWeights: BaseAIWeights = {
@@ -28,6 +29,9 @@ export function useSessionAI() {
         ...prev,
         weights: copiedWeights,
       }));
+      console.log('✅ Session AI initialized with weights');
+    } else {
+      console.warn('❌ No base AI weights provided to Session AI');
     }
   }, []);
 

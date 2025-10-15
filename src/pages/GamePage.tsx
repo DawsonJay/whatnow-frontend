@@ -61,11 +61,13 @@ export default function GamePage() {
       }
 
       const data: GameStartResponse = await response.json();
+      console.log('🎮 Game start API response:', data);
 
       if (!data.session_id || !data.recommendations || !Array.isArray(data.recommendations)) {
         throw new Error('Invalid response format from API');
       }
 
+      console.log('🔄 Calling initializeGame with data and tags:', contextTags);
       initializeGame(data, contextTags);
     } catch (err) {
       console.error('Error initializing game:', err);
