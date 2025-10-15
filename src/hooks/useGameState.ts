@@ -172,18 +172,29 @@ export function useGameState() {
       // Check if we need more recommendations
       if (rerankedPool.length <= 10) {
         await fetchMoreRecommendations();
+        // After fetching more recommendations, use the updated pool from state
+        setGameState((prev) => {
+          const remainingPool = prev.pool.filter((activity) => activity.id !== winner.id);
+          const nextPair = displayNextPair(remainingPool);
+          
+          return {
+            ...prev,
+            currentLeft: winnerPosition === 'left' ? winner : nextPair.left,
+            currentRight: winnerPosition === 'right' ? winner : nextPair.right,
+          };
+        });
+      } else {
+        // Use the current rerankedPool for next cards
+        const remainingPool = rerankedPool.filter((activity) => activity.id !== winner.id);
+        const nextPair = displayNextPair(remainingPool);
+        
+        setGameState((prev) => ({
+          ...prev,
+          pool: rerankedPool,
+          currentLeft: winnerPosition === 'left' ? winner : nextPair.left,
+          currentRight: winnerPosition === 'right' ? winner : nextPair.right,
+        }));
       }
-      
-      // Always show new cards after a choice (whether we fetched more or not)
-      const remainingPool = rerankedPool.filter((activity) => activity.id !== winner.id);
-      const nextPair = displayNextPair(remainingPool);
-      
-      setGameState((prev) => ({
-        ...prev,
-        pool: rerankedPool,
-        currentLeft: winnerPosition === 'left' ? winner : nextPair.left,
-        currentRight: winnerPosition === 'right' ? winner : nextPair.right,
-      }));
     },
     [gameState, trainSessionAI, trainBaseAI, fetchMoreRecommendations, getActivityEmbedding, rankActivities, embeddingsCache, displayNextPair]
   );
