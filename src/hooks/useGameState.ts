@@ -188,10 +188,10 @@ export function useGameState() {
       const rerankedPool = rankActivities(updatedPool, gameState.contextTags, embeddingsCache);
 
       // Check if we need more recommendations
-      if (rerankedPool.length <= 2) {
+      if (rerankedPool.length <= 10) {
         console.log('🔄 Pool running low, fetching more recommendations...', {
           currentPoolSize: rerankedPool.length,
-          threshold: 2
+          threshold: 10
         });
         await fetchMoreRecommendations();
       } else {
