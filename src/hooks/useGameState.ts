@@ -92,18 +92,15 @@ export function useGameState() {
 
       const data: GameStartResponse = await response.json();
 
-      // Add new recommendations to pool and re-rank
+      // Add new recommendations to pool and re-rank (don't change current display)
       setGameState((prev) => {
         const combinedPool = [...prev.pool, ...data.recommendations];
         const rankedPool = rankActivities(combinedPool, prev.contextTags, embeddingsCache);
-        const nextPair = displayNextPair(rankedPool);
-        
         
         return {
           ...prev,
           pool: rankedPool,
-          currentLeft: nextPair.left,
-          currentRight: nextPair.right,
+          // Keep currentLeft and currentRight unchanged
         };
       });
     } catch (error) {
