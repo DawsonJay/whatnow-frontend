@@ -188,7 +188,11 @@ export function useGameState() {
       const rerankedPool = rankActivities(updatedPool, gameState.contextTags, embeddingsCache);
 
       // Check if we need more recommendations
-      if (rerankedPool.length <= 1) {
+      if (rerankedPool.length <= 2) {
+        console.log('🔄 Pool running low, fetching more recommendations...', {
+          currentPoolSize: rerankedPool.length,
+          threshold: 2
+        });
         await fetchMoreRecommendations();
       } else {
         // Keep the winner in place, replace only the loser with next best-ranked
