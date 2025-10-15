@@ -7,8 +7,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = join(__filename, '..');
 
 const server = createServer((req, res) => {
+  console.log(`Request: ${req.method} ${req.url}`);
+  
   const url = req.url.split('?')[0]; // Remove query params
   const filePath = join(__dirname, 'dist', url === '/' ? 'index.html' : url);
+  
+  // Handle SPA routes - if it's not a static file, serve index.html
+  if (url.startsWith('/game') || url.startsWith('/tags') || (!extname(filePath) && !existsSync(filePath))) {
+    const indexPath = join(__dirname, 'dist', 'index.html');
+    const content = readFileSync(indexPath);
+    console.log(`Serving index.html for SPA route: ${req.url}`);
+    res.writeHead(200, { 
+      'Content-Type': 'text/html',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    res.end(content);
+    return;
+  }
   
   // Check if file exists
   if (existsSync(filePath) && extname(filePath)) {
@@ -19,6 +36,7 @@ const server = createServer((req, res) => {
                       ext === '.css' ? 'text/css' : 
                       ext === '.js' ? 'application/javascript' : 'text/plain';
     
+    console.log(`Serving static file: ${filePath} with content-type: ${contentType}`);
     res.writeHead(200, { 
       'Content-Type': contentType,
       'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -30,6 +48,7 @@ const server = createServer((req, res) => {
     // Serve index.html for SPA routing
     const indexPath = join(__dirname, 'dist', 'index.html');
     const content = readFileSync(indexPath);
+    console.log(`Serving index.html for SPA routing: ${req.url}`);
     res.writeHead(200, { 
       'Content-Type': 'text/html',
       'Cache-Control': 'no-cache, no-store, must-revalidate',
