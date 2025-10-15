@@ -172,17 +172,8 @@ export function useGameState() {
       // Check if we need more recommendations
       if (rerankedPool.length <= 10) {
         await fetchMoreRecommendations();
-        // After fetching more recommendations, get the updated pool and show next pair
-        setGameState((prev) => {
-          const remainingPool = prev.pool.filter((activity) => activity.id !== winner.id);
-          const nextPair = displayNextPair(remainingPool);
-          
-          return {
-            ...prev,
-            currentLeft: winnerPosition === 'left' ? winner : nextPair.left,
-            currentRight: winnerPosition === 'right' ? winner : nextPair.right,
-          };
-        });
+        // fetchMoreRecommendations already updates the pool, no need to do anything else
+        // Keep current cards unchanged - background fetch is silent
       } else {
         // Keep the winner in place, replace only the loser with next best-ranked
         const remainingPool = rerankedPool.filter((activity) => activity.id !== winner.id);
