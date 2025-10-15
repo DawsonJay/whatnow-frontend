@@ -71,21 +71,9 @@ export function useGameState() {
   }, []);
 
   const fetchMoreRecommendations = useCallback(async () => {
-    console.log('🚀 fetchMoreRecommendations called!', {
-      contextTagsLength: gameState.contextTags.length,
-      contextTags: gameState.contextTags.slice(0, 3),
-      currentPoolSize: gameState.pool.length
-    });
-
     if (!gameState.contextTags.length) {
-      console.warn('❌ No context tags available for fetching more recommendations');
       return;
     }
-
-    console.log('🔄 Fetching more recommendations...', {
-      currentPoolSize: gameState.pool.length,
-      contextTags: gameState.contextTags.slice(0, 3)
-    });
 
     setIsLoadingMore(true);
 
@@ -103,10 +91,6 @@ export function useGameState() {
       }
 
       const data: GameStartResponse = await response.json();
-      console.log('✅ Fetched more recommendations:', {
-        newCount: data.recommendations?.length,
-        sessionId: data.session_id
-      });
 
       // Add new recommendations to pool and re-rank
       setGameState((prev) => {
@@ -114,11 +98,6 @@ export function useGameState() {
         const rankedPool = rankActivities(combinedPool, prev.contextTags, embeddingsCache);
         const nextPair = displayNextPair(rankedPool);
         
-        console.log('📊 Updated pool:', {
-          oldSize: prev.pool.length,
-          newSize: combinedPool.length,
-          rankedSize: rankedPool.length
-        });
         
         return {
           ...prev,
@@ -194,17 +173,7 @@ export function useGameState() {
       const rerankedPool = rankActivities(updatedPool, gameState.contextTags, embeddingsCache);
 
       // Check if we need more recommendations
-      console.log('🔍 Checking pool size:', {
-        rerankedPoolLength: rerankedPool.length,
-        threshold: 10,
-        shouldFetch: rerankedPool.length <= 10
-      });
-      
       if (rerankedPool.length <= 10) {
-        console.log('🔄 Pool running low, fetching more recommendations...', {
-          currentPoolSize: rerankedPool.length,
-          threshold: 10
-        });
         await fetchMoreRecommendations();
       } else {
         // Keep the winner in place, replace only the loser with next best-ranked

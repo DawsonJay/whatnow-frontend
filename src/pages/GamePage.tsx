@@ -150,12 +150,6 @@ export default function GamePage() {
           <ActivityCard activity={currentRight} onChoose={() => handleChoice('right')} />
         </div>
 
-        {/* Loading More Indicator */}
-        {isLoadingMore && (
-          <div className="mt-8 flex justify-center">
-            <LoadingSpinner message="Loading more recommendations..." />
-          </div>
-        )}
       </div>
     </div>
   );
