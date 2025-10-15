@@ -172,12 +172,17 @@ export function useGameState() {
       // Check if we need more recommendations
       if (rerankedPool.length <= 10) {
         await fetchMoreRecommendations();
-        // After fetching more recommendations, just update the pool and keep current cards
-        setGameState((prev) => ({
-          ...prev,
-          pool: rerankedPool,
-          // Keep currentLeft and currentRight unchanged
-        }));
+        // After fetching more recommendations, get the updated pool and show next pair
+        setGameState((prev) => {
+          const remainingPool = prev.pool.filter((activity) => activity.id !== winner.id);
+          const nextPair = displayNextPair(remainingPool);
+          
+          return {
+            ...prev,
+            currentLeft: winnerPosition === 'left' ? winner : nextPair.left,
+            currentRight: winnerPosition === 'right' ? winner : nextPair.right,
+          };
+        });
       } else {
         // Keep the winner in place, replace only the loser with next best-ranked
         const remainingPool = rerankedPool.filter((activity) => activity.id !== winner.id);
