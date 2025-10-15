@@ -71,7 +71,15 @@ export function useGameState() {
   }, []);
 
   const fetchMoreRecommendations = useCallback(async () => {
-    if (!gameState.contextTags.length) return;
+    if (!gameState.contextTags.length) {
+      console.warn('No context tags available for fetching more recommendations');
+      return;
+    }
+
+    console.log('🔄 Fetching more recommendations...', {
+      currentPoolSize: gameState.pool.length,
+      contextTags: gameState.contextTags.slice(0, 3)
+    });
 
     setIsLoadingMore(true);
 
@@ -89,12 +97,22 @@ export function useGameState() {
       }
 
       const data: GameStartResponse = await response.json();
+      console.log('✅ Fetched more recommendations:', {
+        newCount: data.recommendations?.length,
+        sessionId: data.session_id
+      });
 
       // Add new recommendations to pool and re-rank
       setGameState((prev) => {
         const combinedPool = [...prev.pool, ...data.recommendations];
         const rankedPool = rankActivities(combinedPool, prev.contextTags, embeddingsCache);
         const nextPair = displayNextPair(rankedPool);
+        
+        console.log('📊 Updated pool:', {
+          oldSize: prev.pool.length,
+          newSize: combinedPool.length,
+          rankedSize: rankedPool.length
+        });
         
         return {
           ...prev,
@@ -104,11 +122,11 @@ export function useGameState() {
         };
       });
     } catch (error) {
-      console.error('Error fetching more recommendations:', error);
+      console.error('❌ Error fetching more recommendations:', error);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [gameState.contextTags, displayNextPair]);
+  }, [gameState.contextTags, gameState.pool.length, displayNextPair, rankActivities, embeddingsCache]);
 
   const trainBaseAI = useCallback(
     async (activityId: number) => {
