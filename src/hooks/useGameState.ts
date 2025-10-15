@@ -27,19 +27,11 @@ export function useGameState() {
 
   const initializeGame = useCallback(
     (data: GameStartResponse, contextTags: string[]) => {
-      console.log('🎯 initializeGame called with:', { 
-        sessionId: data.session_id, 
-        recommendationsCount: data.recommendations?.length,
-        hasBaseAIWeights: !!data.base_ai_weights,
-        embeddingsCacheSize: embeddingsCache.size
-      });
-      
       // Initialize Session AI with Base AI weights first
       initializeSessionAI(data.base_ai_weights);
       
       // Rank activities using Session AI with the weights directly
       const rankedPool = rankActivities(data.recommendations, contextTags, embeddingsCache, data.base_ai_weights);
-      console.log('📊 Ranked pool size:', rankedPool.length);
       
       // Pick first two activities from top of ranked list
       const leftActivity = rankedPool[0];
@@ -123,7 +115,13 @@ export function useGameState() {
       if (!gameState.sessionId) return;
 
       try {
-        await fetch(API_ENDPOINTS.gameTrain, {
+        console.log('🤖 Training Base AI:', {
+          activityId,
+          sessionId: gameState.sessionId,
+          contextTags: gameState.contextTags.slice(0, 3)
+        });
+
+        const response = await fetch(API_ENDPOINTS.gameTrain, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -134,8 +132,14 @@ export function useGameState() {
             context_tags: gameState.contextTags,
           }),
         });
+
+        if (response.ok) {
+          console.log('✅ Base AI training successful');
+        } else {
+          console.warn('⚠️ Base AI training failed:', response.status);
+        }
       } catch (error) {
-        console.error('Error training Base AI:', error);
+        console.error('❌ Base AI training error:', error);
       }
     },
     [gameState.sessionId, gameState.contextTags]
@@ -154,8 +158,9 @@ export function useGameState() {
       // Train Session AI with embedding
       const winnerEmbedding = getActivityEmbedding(winner.id);
       if (winnerEmbedding) {
-        // TODO: Implement actual weight update with embedding
-        trainSessionAI(gameState.contextTags, winner.id, 1.0);
+        trainSessionAI(gameState.contextTags, winner.id, 1.0, winnerEmbedding);
+      } else {
+        console.warn(`No embedding found for winner activity ${winner.id}, skipping Session AI training`);
       }
 
       // Train Base AI via API

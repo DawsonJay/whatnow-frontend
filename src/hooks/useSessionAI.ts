@@ -15,7 +15,6 @@ export function useSessionAI() {
   });
 
   const initializeSessionAI = useCallback((baseAIWeights: BaseAIWeights | null) => {
-    console.log('🔄 Initializing Session AI with weights:', baseAIWeights);
     if (baseAIWeights) {
       // Deep copy the weights to avoid mutating the original
       const copiedWeights: BaseAIWeights = {
@@ -29,7 +28,7 @@ export function useSessionAI() {
         ...prev,
         weights: copiedWeights,
       }));
-      console.log('✅ Session AI initialized with weights');
+      console.log('🧠 Session AI initialized with Base AI weights');
     } else {
       console.warn('❌ No base AI weights provided to Session AI');
     }
@@ -73,29 +72,41 @@ export function useSessionAI() {
   }, [predictScore]);
 
   const trainSessionAI = useCallback(
-    (contextTags: string[], activityId: number, reward: number) => {
+    (contextTags: string[], activityId: number, reward: number, activityEmbedding?: number[]) => {
       if (!sessionAI.weights) {
         console.warn('Session AI weights not initialized');
+        return;
+      }
+
+      if (!activityEmbedding) {
+        console.warn(`No embedding provided for activity ${activityId}, skipping Session AI training`);
         return;
       }
 
       // Build context vector from tags
       const contextVector = buildContextVector(contextTags);
       
-      // For now, we need the activity embedding to train
-      // This will be provided by the embeddings cache
-      console.log('Session AI training:', {
-        contextTags,
+      // Store original weights for comparison
+      const originalCoef = sessionAI.weights.coef[0].slice();
+      const originalIntercept = sessionAI.weights.intercept[0];
+      
+      // Update weights using gradient descent
+      updateWeights(contextVector, activityEmbedding, reward, sessionAI.weights, sessionAI.learningRate);
+      
+      // Log training details
+      const coefChange = sessionAI.weights.coef[0].map((val, i) => val - originalCoef[i]);
+      const interceptChange = sessionAI.weights.intercept[0] - originalIntercept;
+      
+      console.log('🧠 Session AI trained:', {
         activityId,
         reward,
         learningRate: sessionAI.learningRate,
-        contextVectorLength: contextVector.length,
+        coefChange: coefChange.slice(0, 5), // Show first 5 dimensions
+        interceptChange: interceptChange.toFixed(6),
+        contextTags: contextTags.slice(0, 3) // Show first 3 tags
       });
-      
-      // Note: We need the activity embedding to actually train
-      // This will be implemented when we integrate with embeddings cache
     },
-    [sessionAI]
+    [sessionAI, updateWeights]
   );
 
   const rankActivities = useCallback((
@@ -112,7 +123,6 @@ export function useSessionAI() {
       return activities;
     }
 
-    console.log('🎯 Ranking activities with Session AI weights');
     const contextVector = buildContextVector(contextTags);
     
     // Score and sort activities
@@ -132,7 +142,20 @@ export function useSessionAI() {
       .sort((a, b) => b.score - a.score) // Sort by score descending
       .map(item => item.activity);
     
-    console.log('✅ Activities ranked successfully');
+    // Log ranking results
+    const topScores = scoredActivities.slice(0, 3).map((activity, i) => {
+      const cachedActivity = embeddingsCache.get(activity.id);
+      const embedding = cachedActivity?.embedding;
+      const score = embedding ? predictScore(contextVector, embedding, activeWeights) : 0;
+      return { name: activity.name, score: score.toFixed(3) };
+    });
+    
+    console.log('🎯 Session AI ranked activities:', {
+      total: activities.length,
+      top3: topScores,
+      contextTags: contextTags.slice(0, 3)
+    });
+    
     return scoredActivities;
   }, [sessionAI.weights, predictScore]);
 

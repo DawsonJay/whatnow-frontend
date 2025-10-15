@@ -19,7 +19,6 @@ export function EmbeddingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const fetchEmbeddings = async () => {
-      console.log('🔄 Fetching embeddings from backend...');
       setIsLoading(true);
       setError(null);
 
@@ -39,7 +38,7 @@ export function EmbeddingsProvider({ children }: { children: ReactNode }) {
         });
 
         setActivities(activitiesMap);
-        console.log(`✅ Loaded ${data.total} activities with embeddings (${data.embedding_dimension}D)`);
+        console.log(`📊 Loaded ${data.total} activities with embeddings (${data.embedding_dimension}D)`);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch embeddings';
         console.error('❌ Error fetching embeddings:', errorMessage);
