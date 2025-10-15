@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { GameStartResponse } from '../types';
 import { API_ENDPOINTS, GAME_CONFIG } from '../config';
 import { useGameState } from '../hooks/useGameState';
-import { useEmbeddingsCache } from '../hooks/useEmbeddingsCache';
+import { useEmbeddings } from '../context/EmbeddingsContext';
 import ActivityCard from '../components/ActivityCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -20,7 +20,7 @@ export default function GamePage() {
   }, [searchParams]);
 
   const { currentLeft, currentRight, handleChoice, isLoadingMore, initializeGame } = useGameState();
-  const { isLoading: embeddingsLoading, error: embeddingsError } = useEmbeddingsCache();
+  const { isLoading: embeddingsLoading, error: embeddingsError } = useEmbeddings();
 
   useEffect(() => {
     // Validate tags

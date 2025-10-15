@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { Activity, GameStartResponse } from '../types';
 import { API_ENDPOINTS } from '../config';
 import { useSessionAI } from './useSessionAI';
-import { useEmbeddingsCache } from './useEmbeddingsCache';
+import { useEmbeddings } from '../context/EmbeddingsContext';
 
 interface GameState {
   pool: Activity[];
@@ -23,7 +23,7 @@ export function useGameState() {
 
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { initializeSessionAI, trainSessionAI, rankActivities } = useSessionAI();
-  const { activities: embeddingsCache, getActivityEmbedding } = useEmbeddingsCache();
+  const { activities: embeddingsCache, getActivityEmbedding } = useEmbeddings();
 
   const initializeGame = useCallback(
     (data: GameStartResponse, contextTags: string[]) => {
