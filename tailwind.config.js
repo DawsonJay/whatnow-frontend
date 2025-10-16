@@ -5,7 +5,16 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        // Dusky Rose Palette
+        'dusky-rose': '#D9BCAF',
+        'thistle': '#8A9688', 
+        'hawthorne-green': '#283D3B',
+        'royal-scepter': '#795663',
+        'blue-noir': '#011627',
+      }
+    },
   },
   plugins: [],
 }
