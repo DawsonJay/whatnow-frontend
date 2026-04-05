@@ -1,6 +1,6 @@
-// Application configuration
+// Application configuration (empty = same origin behind Caddy)
 
-export const API_BASE_URL = 'https://whatnow-backend-71bz.onrender.com';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
 export const API_ENDPOINTS = {
   gameStart: `${API_BASE_URL}/activities/game/start`,
